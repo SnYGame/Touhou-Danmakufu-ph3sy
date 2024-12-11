@@ -1085,6 +1085,8 @@ value DxScript::Func_PlayBGM(script_machine* machine, int argc, const value* arg
 	shared_ptr<SoundSourceData> soundSource = manager->GetSoundSource(path, true);
 	if (soundSource) {
 		shared_ptr<SoundPlayer> player = manager->CreatePlayer(soundSource);
+		WAVEFORMATEX* fmt = &soundSource->formatWave_;
+
 		player->SetAutoDelete(true);
 		player->SetSoundDivision(SoundDivision::DIVISION_BGM);
 
@@ -1092,9 +1094,10 @@ value DxScript::Func_PlayBGM(script_machine* machine, int argc, const value* arg
 		double loopEnd = argv[2].as_float();
 
 		SoundPlayer::PlayStyle* pStyle = player->GetPlayStyle();
+
 		pStyle->bLoop_ = true;
-		pStyle->timeLoopStart_ = loopStart;
-		pStyle->timeLoopEnd_ = loopEnd;
+		pStyle->sampleLoopStart_ = loopStart * fmt->nSamplesPerSec;
+		pStyle->sampleLoopEnd_ = loopEnd * fmt->nSamplesPerSec;
 
 		//player->Play(style);
 		script->GetObjectManager()->ReserveSound(player);
@@ -4959,9 +4962,16 @@ gstd::value DxScript::Func_ObjSound_SetLoopTime(gstd::script_machine* machine, i
 	if (obj) {
 		shared_ptr<SoundPlayer> player = obj->GetPlayer();
 		if (player) {
-			SoundPlayer::PlayStyle* pStyle = player->GetPlayStyle();
-			pStyle->timeLoopStart_ = argv[1].as_float();
-			pStyle->timeLoopEnd_ = argv[2].as_float();
+			if (auto soundSource = player->GetSoundSource()) {
+				WAVEFORMATEX* fmt = &soundSource->formatWave_;
+
+				DWORD startSample = argv[1].as_float() * fmt->nSamplesPerSec;
+				DWORD endSample = argv[2].as_float() * fmt->nSamplesPerSec;;
+
+				SoundPlayer::PlayStyle* pStyle = player->GetPlayStyle();
+				pStyle->sampleLoopStart_ = startSample;
+				pStyle->sampleLoopEnd_ = endSample;
+			}
 		}
 	}
 	return value();
@@ -4973,16 +4983,9 @@ gstd::value DxScript::Func_ObjSound_SetLoopSampleCount(gstd::script_machine* mac
 	if (obj) {
 		shared_ptr<SoundPlayer> player = obj->GetPlayer();
 		if (player) {
-			if (auto soundSource = player->GetSoundSource()) {
-				WAVEFORMATEX* fmt = &soundSource->formatWave_;
-
-				double startTime = argv[1].as_float() / (double)fmt->nSamplesPerSec;
-				double endTime = argv[2].as_float() / (double)fmt->nSamplesPerSec;;
-
-				SoundPlayer::PlayStyle* pStyle = player->GetPlayStyle();
-				pStyle->timeLoopStart_ = startTime;
-				pStyle->timeLoopEnd_ = endTime;
-			}
+			SoundPlayer::PlayStyle* pStyle = player->GetPlayStyle();
+			pStyle->sampleLoopStart_ = argv[1].as_int();
+			pStyle->sampleLoopEnd_ = argv[2].as_int();
 		}
 	}
 	return value();
@@ -4994,14 +4997,17 @@ gstd::value DxScript::Func_ObjSound_Seek(gstd::script_machine* machine, int argc
 	if (obj) {
 		shared_ptr<SoundPlayer> player = obj->GetPlayer();
 		if (player) {
-			double time = argv[1].as_float();
-			if (player->IsPlaying()) {
-				player->Seek(time);
-				player->ResetStreamForSeek();
-			}
-			else {
-				SoundPlayer::PlayStyle* pStyle = player->GetPlayStyle();
-				pStyle->timeStart_ = time;
+			if (auto soundSource = player->GetSoundSource()) {
+				WAVEFORMATEX* fmt = &soundSource->formatWave_;
+				double time = argv[1].as_float();
+				if (player->IsPlaying()) {
+					player->Seek(time);
+					player->ResetStreamForSeek();
+				}
+				else {
+					SoundPlayer::PlayStyle* pStyle = player->GetPlayStyle();
+					pStyle->sampleStart_ = time * fmt->nSamplesPerSec;
+				}
 			}
 		}
 	}
@@ -5014,18 +5020,14 @@ gstd::value DxScript::Func_ObjSound_SeekSampleCount(gstd::script_machine* machin
 	if (obj) {
 		shared_ptr<SoundPlayer> player = obj->GetPlayer();
 		if (player) {
-			if (auto soundSource = player->GetSoundSource()) {
-				WAVEFORMATEX* fmt = &soundSource->formatWave_;
-
-				DWORD samp = argv[1].as_int();
-				if (player->IsPlaying()) {
-					player->Seek(samp);
-					player->ResetStreamForSeek();
-				}
-				else {
-					SoundPlayer::PlayStyle* pStyle = player->GetPlayStyle();
-					pStyle->timeStart_ = samp / (double)fmt->nSamplesPerSec;
-				}
+			DWORD samp = argv[1].as_int();
+			if (player->IsPlaying()) {
+				player->Seek(samp);
+				player->ResetStreamForSeek();
+			}
+			else {
+				SoundPlayer::PlayStyle* pStyle = player->GetPlayStyle();
+				pStyle->sampleStart_ = samp;
 			}
 		}
 	}

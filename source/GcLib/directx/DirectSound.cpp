@@ -735,9 +735,9 @@ SoundPlayer::SoundPlayer() {
 	pathHash_ = 0;
 
 	playStyle_.bLoop_ = false;
-	playStyle_.timeLoopStart_ = 0;
-	playStyle_.timeLoopEnd_ = 0;
-	playStyle_.timeStart_ = -1;
+	playStyle_.sampleLoopStart_ = 0;
+	playStyle_.sampleLoopEnd_ = 0;
+	playStyle_.sampleStart_ = -1;
 	playStyle_.bResume_ = false;
 
 	bDelete_ = false;
@@ -1141,11 +1141,11 @@ bool SoundStreamingPlayer::Play() {
 		SetFade(0);
 
 		bStreamOver_ = false;
-		if (!bPause_ || !playStyle_.bResume_ || playStyle_.timeStart_ >= 0) {
-			this->Seek(playStyle_.timeStart_ >= 0 ? playStyle_.timeStart_ : 0);
+		if (!bPause_ || !playStyle_.bResume_ || playStyle_.sampleStart_ >= 0) {
+			this->Seek(playStyle_.sampleStart_ >= 0 ? playStyle_.sampleStart_ : 0UL);
 			pDirectSoundBuffer_->SetCurrentPosition(0);
 		}
-		playStyle_.timeStart_ = -1;
+		playStyle_.sampleStart_ = -1;
 
 		for (size_t iEvent = 0; iEvent < 3; ++iEvent)
 			::ResetEvent(hEvent_[iEvent]);
@@ -1370,10 +1370,10 @@ bool SoundPlayerWave::Play() {
 		if (playStyle_.bLoop_)
 			dwFlags = DSBPLAY_LOOPING;
 
-		if (!bPause_ || !playStyle_.bResume_ || playStyle_.timeStart_ >= 0) {
-			this->Seek(playStyle_.timeStart_ >= 0 ? playStyle_.timeStart_ : 0);
+		if (!bPause_ || !playStyle_.bResume_ || playStyle_.sampleStart_ >= 0) {
+			this->Seek(playStyle_.sampleStart_ >= 0 ? playStyle_.sampleStart_ : 0UL);
 		}
-		playStyle_.timeStart_ = -1;
+		playStyle_.sampleStart_ = -1;
 
 		HRESULT hr = pDirectSoundBuffer_->Play(0, 0, dwFlags);
 		if (hr == DSERR_BUFFERLOST) {
@@ -1476,10 +1476,10 @@ DWORD SoundStreamingPlayerWave::_CopyBuffer(LPVOID pMem, DWORD dwSize) {
 
 	memset(pMem, 0, dwSize);
 	if (auto reader = source->reader_) {
-		double loopStart = playStyle_.timeLoopStart_;
-		double loopEnd = playStyle_.timeLoopEnd_;
-		DWORD byteLoopStart = Math::FloorBase<DWORD>(loopStart * bytePerSec, bytePerSample);
-		DWORD byteLoopEnd = Math::FloorBase<DWORD>(loopEnd * bytePerSec, bytePerSample);
+		DWORD loopStart = playStyle_.sampleLoopStart_;
+		DWORD loopEnd = playStyle_.sampleLoopEnd_;
+		DWORD byteLoopStart = loopStart * bytePerSample;
+		DWORD byteLoopEnd = loopEnd * bytePerSample;
 
 		reader->Seek(lastReadPointer_);
 
@@ -1611,10 +1611,10 @@ DWORD SoundStreamingPlayerOgg::_CopyBuffer(LPVOID pMem, DWORD dwSize) {
 
 	memset((char*)pMem, 0, dwSize);
 	if (OggVorbis_File* pFileOgg = source->fileOgg_) {
-		double loopStart = playStyle_.timeLoopStart_;
-		double loopEnd = playStyle_.timeLoopEnd_;
-		DWORD byteLoopStart = Math::FloorBase<DWORD>(loopStart * bytePerSec, bytePerSample);
-		DWORD byteLoopEnd = Math::FloorBase<DWORD>(loopEnd * bytePerSec, bytePerSample);
+		DWORD loopStart = playStyle_.sampleLoopStart_;
+		DWORD loopEnd = playStyle_.sampleLoopEnd_;
+		DWORD byteLoopStart = loopStart * bytePerSample;
+		DWORD byteLoopEnd = loopEnd * bytePerSample;
 
 		ov_pcm_seek(pFileOgg, lastReadPointer_);
 

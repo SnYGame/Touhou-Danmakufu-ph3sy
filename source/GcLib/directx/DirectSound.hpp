@@ -201,9 +201,9 @@ namespace directx {
 	public:
 		struct PlayStyle {
 			bool bLoop_;				//Loop enable
-			double timeLoopStart_;		//Loop start (in seconds)
-			double timeLoopEnd_;		//Loop end (in seconds)
-			double timeStart_;			//Starting time (in seconds)
+			DWORD sampleLoopStart_;		//Loop start (in samples)
+			DWORD sampleLoopEnd_;		//Loop end (in samples)
+			long sampleStart_;			//Starting time (in samples)
 			bool bResume_;				//Resume playing after Stop and Play?
 		};
 	public:
