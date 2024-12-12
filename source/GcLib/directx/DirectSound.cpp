@@ -735,8 +735,6 @@ SoundPlayer::SoundPlayer() {
 	pathHash_ = 0;
 
 	playStyle_.bLoop_ = false;
-	playStyle_.sampleLoopStart_ = 0;
-	playStyle_.sampleLoopEnd_ = 0;
 	playStyle_.sampleStart_ = -1;
 	playStyle_.bResume_ = false;
 
@@ -1476,10 +1474,7 @@ DWORD SoundStreamingPlayerWave::_CopyBuffer(LPVOID pMem, DWORD dwSize) {
 
 	memset(pMem, 0, dwSize);
 	if (auto reader = source->reader_) {
-		DWORD loopStart = playStyle_.sampleLoopStart_;
-		DWORD loopEnd = playStyle_.sampleLoopEnd_;
-		DWORD byteLoopStart = loopStart * bytePerSample;
-		DWORD byteLoopEnd = loopEnd * bytePerSample;
+		auto& jumpPoints = playStyle_.jumpPoints_;
 
 		reader->Seek(lastReadPointer_);
 
@@ -1494,10 +1489,21 @@ DWORD SoundStreamingPlayerWave::_CopyBuffer(LPVOID pMem, DWORD dwSize) {
 		while (totalWritten < dwSize) {
 			DWORD byteCurrent = reader->GetFilePointer() - source->posWaveStart_;
 
+			DWORD nextJumpPointByte = 0;
+			DWORD jumpDestSample = 0;
+
+			for (auto& iter : jumpPoints) {
+				if (byteCurrent < iter.first * bytePerSample) {
+					nextJumpPointByte = iter.first * bytePerSample;
+					jumpDestSample = iter.second;
+					break;
+				}
+			}
+
 			DWORD remain = dwSize - totalWritten;
-			if (playStyle_.bLoop_ && (byteCurrent + remain > byteLoopEnd && byteLoopEnd > 0)) {
+			if (playStyle_.bLoop_ && (byteCurrent + remain > nextJumpPointByte && nextJumpPointByte > 0)) {
 				//This read will contain the looping point
-				DWORD size1 = std::min(byteLoopEnd - byteCurrent, remain);
+				DWORD size1 = std::min(nextJumpPointByte - byteCurrent, remain);
 				_WriteBytes(size1);
 			}
 			else {
@@ -1509,7 +1515,7 @@ DWORD SoundStreamingPlayerWave::_CopyBuffer(LPVOID pMem, DWORD dwSize) {
 			//Reset to loop start
 			{
 				if (playStyle_.bLoop_) {
-					Seek(byteLoopStart / bytePerSample);
+					Seek(jumpDestSample);
 				}
 				else {
 					_SetStreamOver();
@@ -1611,10 +1617,7 @@ DWORD SoundStreamingPlayerOgg::_CopyBuffer(LPVOID pMem, DWORD dwSize) {
 
 	memset((char*)pMem, 0, dwSize);
 	if (OggVorbis_File* pFileOgg = source->fileOgg_) {
-		DWORD loopStart = playStyle_.sampleLoopStart_;
-		DWORD loopEnd = playStyle_.sampleLoopEnd_;
-		DWORD byteLoopStart = loopStart * bytePerSample;
-		DWORD byteLoopEnd = loopEnd * bytePerSample;
+		auto& jumpPoints = playStyle_.jumpPoints_;
 
 		ov_pcm_seek(pFileOgg, lastReadPointer_);
 
@@ -1634,12 +1637,24 @@ DWORD SoundStreamingPlayerOgg::_CopyBuffer(LPVOID pMem, DWORD dwSize) {
 		};
 
 		while (totalWritten < dwSize) {
-			DWORD byteCurrent = ov_pcm_tell(pFileOgg) * bytePerSample;
+			DWORD sampleCurrent = ov_pcm_tell(pFileOgg);
+			DWORD byteCurrent = sampleCurrent * bytePerSample;
+
+			DWORD nextJumpPointByte = 0;
+			DWORD jumpDestSample = 0;
+
+			for (auto& iter : jumpPoints) {
+				if (sampleCurrent < iter.first) {
+					nextJumpPointByte = iter.first * bytePerSample;
+					jumpDestSample = iter.second;
+					break;
+				}
+			}
 
 			DWORD remain = dwSize - totalWritten;
-			if (playStyle_.bLoop_ && (byteCurrent + remain > byteLoopEnd && byteLoopEnd > 0)) {
+			if (playStyle_.bLoop_ && (byteCurrent + remain > nextJumpPointByte && nextJumpPointByte > 0)) {
 				//This read will contain the looping point
-				DWORD size1 = std::min(byteLoopEnd - byteCurrent, remain);
+				DWORD size1 = std::min(nextJumpPointByte - byteCurrent, remain);
 				_DecodeOgg(size1);
 			}
 			else {
@@ -1651,7 +1666,7 @@ DWORD SoundStreamingPlayerOgg::_CopyBuffer(LPVOID pMem, DWORD dwSize) {
 			//Reset to loop start
 			{
 				if (playStyle_.bLoop_) {
-					Seek(byteLoopStart / bytePerSample);
+					Seek(jumpDestSample);
 				}
 				else {
 					_SetStreamOver();

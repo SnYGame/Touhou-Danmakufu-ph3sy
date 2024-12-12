@@ -488,6 +488,8 @@ static const std::vector<function> dxFunction = {
 	{ "ObjSound_SetFrequency", DxScript::Func_ObjSound_SetFrequency, 2 },
 	{ "ObjSound_GetInfo", DxScript::Func_ObjSound_GetInfo, 2 },
 	{ "ObjSound_GetSamplesFFT", DxScript::Func_ObjSound_GetSamplesFFT, 4 },
+	{ "ObjSound_AddJumpPoint", DxScript::Func_ObjSound_AddJumpPoint, 3 },
+	{ "ObjSound_ClearJumpPoints", DxScript::Func_ObjSound_ClearJumpPoints, 1 },
 
 	//File object functions
 	{ "ObjFile_Create", DxScript::Func_ObjFile_Create, 1 },
@@ -1096,8 +1098,7 @@ value DxScript::Func_PlayBGM(script_machine* machine, int argc, const value* arg
 		SoundPlayer::PlayStyle* pStyle = player->GetPlayStyle();
 
 		pStyle->bLoop_ = true;
-		pStyle->sampleLoopStart_ = loopStart * fmt->nSamplesPerSec;
-		pStyle->sampleLoopEnd_ = loopEnd * fmt->nSamplesPerSec;
+		pStyle->jumpPoints_[loopEnd * fmt->nSamplesPerSec] = loopStart * fmt->nSamplesPerSec;
 
 		//player->Play(style);
 		script->GetObjectManager()->ReserveSound(player);
@@ -4969,8 +4970,8 @@ gstd::value DxScript::Func_ObjSound_SetLoopTime(gstd::script_machine* machine, i
 				DWORD endSample = argv[2].as_float() * fmt->nSamplesPerSec;;
 
 				SoundPlayer::PlayStyle* pStyle = player->GetPlayStyle();
-				pStyle->sampleLoopStart_ = startSample;
-				pStyle->sampleLoopEnd_ = endSample;
+				pStyle->jumpPoints_.clear();
+				pStyle->jumpPoints_[endSample] = startSample;
 			}
 		}
 	}
@@ -4984,8 +4985,8 @@ gstd::value DxScript::Func_ObjSound_SetLoopSampleCount(gstd::script_machine* mac
 		shared_ptr<SoundPlayer> player = obj->GetPlayer();
 		if (player) {
 			SoundPlayer::PlayStyle* pStyle = player->GetPlayStyle();
-			pStyle->sampleLoopStart_ = argv[1].as_int();
-			pStyle->sampleLoopEnd_ = argv[2].as_int();
+			pStyle->jumpPoints_.clear();
+			pStyle->jumpPoints_[argv[2].as_int()] = argv[1].as_int();
 		}
 	}
 	return value();
@@ -5197,6 +5198,34 @@ gstd::value DxScript::Func_ObjSound_GetSamplesFFT(gstd::script_machine* machine,
 	}
 
 	return script->CreateFloatArrayValue(fftResult);
+}
+gstd::value DxScript::Func_ObjSound_AddJumpPoint(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	DxScript* script = (DxScript*)machine->data;
+	int id = argv[0].as_int();
+	DxSoundObject* obj = script->GetObjectPointerAs<DxSoundObject>(id);
+	if (obj) {
+		shared_ptr<SoundPlayer> player = obj->GetPlayer();
+		if (player) {
+			SoundPlayer::PlayStyle* pStyle = player->GetPlayStyle();
+			DWORD jumpStart = argv[1].as_int();
+			DWORD jumpEnd = argv[2].as_int();
+			pStyle->jumpPoints_[jumpStart] = jumpEnd;
+		}
+	}
+	return value();
+}
+gstd::value DxScript::Func_ObjSound_ClearJumpPoints(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	DxScript* script = (DxScript*)machine->data;
+	int id = argv[0].as_int();
+	DxSoundObject* obj = script->GetObjectPointerAs<DxSoundObject>(id);
+	if (obj) {
+		shared_ptr<SoundPlayer> player = obj->GetPlayer();
+		if (player) {
+			SoundPlayer::PlayStyle* pStyle = player->GetPlayStyle();
+			pStyle->jumpPoints_.clear();
+		}
+	}
+	return value();
 }
 
 //Dx関数：ファイル操作(DxFileObject)

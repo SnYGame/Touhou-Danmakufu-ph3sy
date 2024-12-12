@@ -466,6 +466,8 @@ namespace directx {
 		DNH_FUNCAPI_DECL_(Func_ObjSound_SetFrequency);
 		DNH_FUNCAPI_DECL_(Func_ObjSound_GetInfo);
 		DNH_FUNCAPI_DECL_(Func_ObjSound_GetSamplesFFT);
+		DNH_FUNCAPI_DECL_(Func_ObjSound_AddJumpPoint);
+		DNH_FUNCAPI_DECL_(Func_ObjSound_ClearJumpPoints);
 
 		//Dx関数：ファイル操作(DxFileObject)
 		static gstd::value Func_ObjFile_Create(gstd::script_machine* machine, int argc, const gstd::value* argv);
