@@ -2406,7 +2406,17 @@ void StgCurveLaserObject::_Move() {
 	DxScriptRenderObject::SetY(posY_);
 
 	{
-		double angleZ = GetDirectionAngle();
+		double angleZ = lastAngle_;
+
+		if (listPosition_.empty())
+			angleZ = GetDirectionAngle();
+		else {
+			LaserNode& node = listPosition_.front();
+			if (node.pos[0] != posX_ || node.pos[1] != posY_) {
+				angleZ = atan2(posY_ - node.pos[1], posX_ - node.pos[0]);
+			}
+		}
+
 		if (lastAngle_ != angleZ) {
 			lastAngle_ = angleZ;
 			move_ = D3DXVECTOR2(cosf(lastAngle_), sinf(lastAngle_));
