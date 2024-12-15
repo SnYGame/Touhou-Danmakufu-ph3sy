@@ -844,8 +844,11 @@ void StgShotObject::Work() {
 void StgShotObject::_Move() {
 	if (delay_.time == 0 || bEnableMotionDelay_)
 		StgMoveObject::_Move();
-	SetX(posX_);
-	SetY(posY_);
+	else {
+		UpdateRelativePosition();
+	}
+	DxScriptRenderObject::SetX(posX_);
+	DxScriptRenderObject::SetY(posY_);
 }
 void StgShotObject::_DeleteInLife() {
 	if (IsDeleted() || life_ > 0) return;
@@ -1404,6 +1407,10 @@ StgNormalShotObject::StgNormalShotObject(StgStageController* stageController) : 
 	angularVelocity_ = 0;
 	bFixedAngle_ = false;
 
+	lastPosX_ = 0;
+	lastPosY_ = 0;
+	modeRotation_ = StgShotManager::SHOT_ROTATION_DEFAULT;
+
 	move_ = D3DXVECTOR2(1, 0);
 	lastAngle_ = 0;
 }
@@ -1417,11 +1424,16 @@ void StgNormalShotObject::Clone(DxScriptObjectBase* _src) {
 
 	angularVelocity_ = src->angularVelocity_;
 	bFixedAngle_ = src->bFixedAngle_;
+
+	lastPosX_ = src->lastPosX_;
+	lastPosY_ = src->lastPosY_;
+	modeRotation_ = src->modeRotation_;
 }
 
 void StgNormalShotObject::Work() {
 	if (bEnableMovement_) {
 		_ProcessTransformAct();
+		movedThisFrame_ = false;
 		_Move();
 
 		if (delay_.time > 0) {
@@ -1436,7 +1448,25 @@ void StgNormalShotObject::Work() {
 
 			double angleZ = bDelay ? delay_.angle.x : angle_.z;
 			if (StgShotData* shotData = _GetShotData()) {
-				if (!bFixedAngle_ && !bDelay) angleZ += GetDirectionAngle() + Math::DegreeToRadian(90);
+				if (!bFixedAngle_ && !bDelay) {
+					switch (modeRotation_) {
+					case StgShotManager::SHOT_ROTATION_DEFAULT:
+						angleZ += GetDirectionAngle() + Math::DegreeToRadian(90);
+						break;
+					case StgShotManager::SHOT_ROTATION_OFFSET:
+						if (lastPosX_ != posX_ || lastPosY_ != posY_) {
+							angleZ += atan2(posY_ - lastPosY_, posX_ - lastPosX_) + Math::DegreeToRadian(90);
+						}
+						break;
+					case StgShotManager::SHOT_ROTATION_RELATIVE:
+						double parentRotation = 0;
+						if (auto parent = parent_.Lock()) {
+							parentRotation = Math::DegreeToRadian(parent->GetParentRotation());
+						}
+						angleZ += GetDirectionAngle() + Math::DegreeToRadian(90) + parentRotation;
+						break;
+					}
+				}
 			}
 
 			if (angleZ != lastAngle_) {
@@ -1444,6 +1474,8 @@ void StgNormalShotObject::Work() {
 				move_ = D3DXVECTOR2(cosf(ang), sinf(ang));
 				lastAngle_ = angleZ;
 			}
+			lastPosX_ = posX_;
+			lastPosY_ = posY_;
 		}
 	}
 
@@ -1706,8 +1738,7 @@ void StgNormalShotObject::_SendDeleteEvent(TypeDelete type) {
 					int id = objectManager->AddObject(obj);
 					if (id != DxScript::ID_INVALID) {
 						itemManager->AddItem(obj);
-						obj->SetPositionX(pos[0]);
-						obj->SetPositionY(pos[1]);
+						obj->SetPositionXY(pos[0], pos[1]);
 					}
 				}
 			}
@@ -1848,6 +1879,7 @@ void StgLooseLaserObject::Work() {
 
 	if (bEnableMovement_) {
 		_ProcessTransformAct();
+		movedThisFrame_ = false;
 		_Move();
 
 
@@ -2066,8 +2098,7 @@ void StgLooseLaserObject::_SendDeleteEvent(TypeDelete type) {
 						int id = objectManager->AddObject(obj);
 						if (id != DxScript::ID_INVALID) {
 							itemManager->AddItem(obj);
-							obj->SetPositionX(pos[0]);
-							obj->SetPositionY(pos[1]);
+							obj->SetPositionXY(pos[0], pos[1]);
 						}
 					}
 				}
@@ -2083,6 +2114,7 @@ StgStraightLaserObject::StgStraightLaserObject(StgStageController* stageControll
 	typeObject_ = TypeObject::StraightLaser;
 
 	angLaser_ = 0;
+	relAngLaser_ = 0;
 	frameFadeDelete_ = -1;
 
 	bUseSouce_ = true;
@@ -2106,6 +2138,7 @@ void StgStraightLaserObject::Clone(DxScriptObjectBase* _src) {
 	auto src = (StgStraightLaserObject*)_src;
 
 	angLaser_ = src->angLaser_;
+	relAngLaser_ = src->relAngLaser_;
 
 	bUseSouce_ = src->bUseSouce_;
 	bUseEnd_ = src->bUseEnd_;
@@ -2122,6 +2155,7 @@ void StgStraightLaserObject::Work() {
 
 	if (bEnableMovement_) {
 		_ProcessTransformAct();
+		movedThisFrame_ = false;
 		_Move();
 
 		if (!bLaserExpand_ || delay_.time > 0) {
@@ -2132,6 +2166,8 @@ void StgStraightLaserObject::Work() {
 			scaleX_ = std::min(1.0f, scaleX_ + 0.1f);
 
 		delay_.angle.x += delay_.angle.y;
+
+		SetRelativeAngle(relAngLaser_);
 
 		if (lastAngle_ != angLaser_) {
 			lastAngle_ = angLaser_;
@@ -2338,13 +2374,22 @@ void StgStraightLaserObject::_SendDeleteEvent(TypeDelete type) {
 						int id = objectManager->AddObject(obj);
 						if (id != DxScript::ID_INVALID) {
 							itemManager->AddItem(obj);
-							obj->SetPositionX(pos[0]);
-							obj->SetPositionY(pos[1]);
+							obj->SetPositionXY(pos[0], pos[1]);
 						}
 					}
 				}
 			}
 		}
+	}
+}
+
+void StgStraightLaserObject::SetParent(ref_unsync_ptr<StgMoveObject> parent) {
+	StgMoveObject::SetParent(parent);
+	if (parent) {
+		relAngLaser_ = angLaser_ - Math::DegreeToRadian(parent->GetParentRotation());
+	}
+	else {
+		relAngLaser_ = angLaser_;
 	}
 }
 
@@ -2388,6 +2433,7 @@ void StgCurveLaserObject::Work() {
 
 	if (bEnableMovement_) {
 		_ProcessTransformAct();
+		movedThisFrame_ = false;
 		_Move();
 
 		if (delay_.time > 0) {
@@ -2816,8 +2862,7 @@ void StgCurveLaserObject::_SendDeleteEvent(TypeDelete type) {
 						int id = objectManager->AddObject(obj);
 						if (id != DxScript::ID_INVALID) {
 							itemManager->AddItem(obj);
-							obj->SetPositionX(ix);
-							obj->SetPositionY(iy);
+							obj->SetPositionXY(ix, iy);
 						}
 					}
 				}

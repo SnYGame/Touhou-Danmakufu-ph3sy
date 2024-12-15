@@ -156,6 +156,8 @@ void StgPlayerObject::Move() {
 	}
 }
 void StgPlayerObject::_Move() {
+	StgMoveObject::_Move();
+
 	EDirectInput* input = EDirectInput::GetInstance();
 	DIKeyState keyLeft = input->GetVirtualKeyState(EDirectInput::KEY_LEFT);
 	DIKeyState keyRight = input->GetVirtualKeyState(EDirectInput::KEY_RIGHT);
@@ -194,10 +196,10 @@ void StgPlayerObject::_Move() {
 
 	//Add and clip player position
 	{
-		double px = posX_ + sx;
-		double py = posY_ + sy;
-		SetX(std::clamp<double>(px, rcClip_.left, rcClip_.right));
-		SetY(std::clamp<double>(py, rcClip_.top, rcClip_.bottom));
+		UpdateRelativePosition();
+		SetPositionXY(std::clamp<double>(posX_ + sx, rcClip_.left, rcClip_.right), std::clamp<double>(posY_ + sy, rcClip_.top, rcClip_.bottom));
+		DxScriptRenderObject::SetX(posX_);
+		DxScriptRenderObject::SetY(posY_);
 	}
 }
 void StgPlayerObject::_AddIntersection() {

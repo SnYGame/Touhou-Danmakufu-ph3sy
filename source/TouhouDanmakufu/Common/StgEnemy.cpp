@@ -192,6 +192,7 @@ void StgEnemyObject::Work() {
 	lifePrev_ = life_;
 	damageAccumFrame_ = 0;
 
+	movedThisFrame_ = false;
 	_Move();
 
 	_DeleteInAutoClip();
@@ -382,8 +383,7 @@ bool StgEnemyBossSceneObject::_NextScript() {
 				std::vector<ref_unsync_ptr<StgEnemyBossObject>>& listOldEnemyObject = oldActiveData->GetEnemyObjectList();
 				if (iEnemy < listOldEnemyObject.size()) {
 					ref_unsync_ptr<StgEnemyBossObject>& objOld = listOldEnemyObject[iEnemy];
-					obj->SetPositionX(objOld->GetPositionX());
-					obj->SetPositionY(objOld->GetPositionY());
+					obj->SetPositionXY(objOld->GetPositionX(), objOld->GetPositionY());
 				}
 			}
 			objectManager->ActivateObject(obj->GetObjectID(), true);

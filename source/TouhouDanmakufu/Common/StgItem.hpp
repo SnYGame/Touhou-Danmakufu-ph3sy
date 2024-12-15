@@ -260,8 +260,8 @@ public:
 
 	virtual void Intersect(StgIntersectionTarget* ownTarget, StgIntersectionTarget* otherTarget) = 0;
 
-	virtual void SetX(float x) { posX_ = x; DxScriptRenderObject::SetX(x); }
-	virtual void SetY(float y) { posY_ = y; DxScriptRenderObject::SetY(y); }
+	virtual void SetX(float x) { StgMoveObject::SetPositionX(x); DxScriptRenderObject::SetX(x); }
+	virtual void SetY(float y) { StgMoveObject::SetPositionY(y); DxScriptRenderObject::SetY(y); }
 	virtual void SetColor(int r, int g, int b);
 	virtual void SetAlpha(int alpha);
 	void SetToPosition(D3DXVECTOR2& pos);

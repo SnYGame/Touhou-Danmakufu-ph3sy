@@ -9,19 +9,48 @@
 StgMoveObject::StgMoveObject(StgStageController* stageController) : StgObjectBase(stageController) {
 	posX_ = 0;
 	posY_ = 0;
+
+	relativePosX_ = 0;
+	relativePosY_ = 0;
+
+	r2aMatX_ = a2rMatX_ = {1, 0};
+	r2aMatY_ = a2rMatY_ = {0, 1};
+
+	parentRotation_ = 0;
+	parentScale_ = 1;
+
 	framePattern_ = 0;
 
 	pattern_ = nullptr;
+	parent_ = nullptr;
+	movedThisFrame_ = false;
 	bEnableMovement_ = true;
 	frameMove_ = 0;
 }
 StgMoveObject::~StgMoveObject() {
 	pattern_ = nullptr;
+	if (auto parent = parent_.Lock()) {
+		parent->children_.erase(this);
+	}
+	for (auto child : children_) {
+		child->SetParent(nullptr);
+	}
 }
 
 void StgMoveObject::Copy(StgMoveObject* src) {
 	posX_ = src->posX_;
 	posY_ = src->posY_;
+
+	relativePosX_ = src->relativePosX_;
+	relativePosY_ = src->relativePosY_;
+
+	r2aMatX_ = src->r2aMatX_;
+	r2aMatY_ = src->r2aMatY_;
+	a2rMatX_ = src->a2rMatX_;
+	a2rMatY_ = src->a2rMatY_;
+
+	parentRotation_ = src->parentRotation_;
+	parentScale_ = src->parentScale_;
 
 	auto _ClonePattern = [](StgMovePattern* srcPattern, StgMoveObject* newTarget) {
 		ref_unsync_ptr<StgMovePattern> pattern = nullptr;
@@ -34,6 +63,7 @@ void StgMoveObject::Copy(StgMoveObject* src) {
 
 	pattern_ = _ClonePattern(src->pattern_.get(), this);
 
+	parent_ = src->parent_;
 	bEnableMovement_ = src->bEnableMovement_;
 	frameMove_ = src->frameMove_;
 	framePattern_ = src->framePattern_;
@@ -50,7 +80,12 @@ void StgMoveObject::Copy(StgMoveObject* src) {
 }
 
 void StgMoveObject::_Move() {
-	if (!bEnableMovement_) return;
+	if (!bEnableMovement_ || movedThisFrame_) return;
+	movedThisFrame_ = true;
+	if (auto parent = parent_.Lock()) {
+		parent->_Move();
+	}
+
 	++frameMove_;
 
 	if (mapPattern_.size() > 0) {
@@ -64,9 +99,13 @@ void StgMoveObject::_Move() {
 		if (pattern_ == nullptr)
 			pattern_ = new StgMovePattern_Angle(this);
 	}
-	else if (pattern_ == nullptr) return;
+	else if (pattern_ == nullptr) {
+		UpdateRelativePosition();
+		return;
+	}
 
 	pattern_->Move();
+	UpdateRelativePosition();
 	++framePattern_;
 }
 void StgMoveObject::_AttachReservedPattern(ref_unsync_ptr<StgMovePattern> pattern) {
@@ -118,6 +157,42 @@ void StgMoveObject::SetSpeedY(double speedY) {
 	}
 	StgMovePattern_XY* pattern = dynamic_cast<StgMovePattern_XY*>(pattern_.get());
 	pattern->SetSpeedY(speedY);
+}
+void StgMoveObject::SetParent(ref_unsync_ptr<StgMoveObject> parent) {
+	if (auto prev = parent_.Lock()) {
+		prev->children_.erase(this);
+	}
+	parent_ = parent;
+	if (parent) {
+		parent->children_.insert(this);
+	}
+	SetPositionXY(posX_, posY_);
+}
+void StgMoveObject::SetRelativePositionXY(double posX, double posY) {
+	relativePosX_ = posX;
+	relativePosY_ = posY;
+	if (auto parent = parent_.Lock()) {
+		posX_ = parent->posX_ + posX * parent->r2aMatX_[0] + posY * parent->r2aMatX_[1];
+		posY_ = parent->posY_ + posX * parent->r2aMatY_[0] + posY * parent->r2aMatY_[1];
+	}
+	else {
+		posX_ = posX;
+		posY_ = posY;
+	}
+}
+void StgMoveObject::SetPositionXY(double posX, double posY) {
+	posX_ = posX;
+	posY_ = posY;
+	if (auto parent = parent_.Lock()) {
+		double offX = posX - parent->posX_;
+		double offY = posY - parent->posY_;
+		relativePosX_ = offX * parent->a2rMatX_[0] + offY * parent->a2rMatX_[1];
+		relativePosY_ = offX * parent->a2rMatY_[0] + offY * parent->a2rMatY_[1];
+	}
+	else {
+		relativePosX_ = posX;
+		relativePosY_ = posY;
+	}
 }
 
 //****************************************************************************
@@ -213,8 +288,8 @@ void StgMovePattern_Angle::Move() {
 		SetDirectionAngle(angle + angularVelocity_);
 	}
 
-	target_->SetPositionX(fma(speed_, c_, target_->GetPositionX()));
-	target_->SetPositionY(fma(speed_, s_, target_->GetPositionY()));
+	target_->SetRelativePositionXY(fma(speed_, c_, target_->GetRelativePositionX()),
+		fma(speed_, s_, target_->GetRelativePositionY()));
 
 	++frameWork_;
 }
@@ -386,8 +461,8 @@ void StgMovePattern_XY::Move() {
 		}
 	}
 
-	target_->SetPositionX(target_->GetPositionX() + c_);
-	target_->SetPositionY(target_->GetPositionY() + s_);
+	target_->SetRelativePositionXY(target_->GetRelativePositionX() + c_,
+		target_->GetRelativePositionY() + s_);
 
 	++frameWork_;
 }
@@ -544,8 +619,8 @@ void StgMovePattern_XY_Angle::Move() {
 	Math::DVec2 speed{ c_, s_ };
 	Math::Rotate2D(speed, angOff_, 0, 0);
 
-	target_->SetPositionX(target_->GetPositionX() + speed[0]);
-	target_->SetPositionY(target_->GetPositionY() + speed[1]);
+	target_->SetRelativePositionXY(target_->GetRelativePositionX() + speed[0],
+		target_->GetRelativePositionY() + speed[1]);
 
 	++frameWork_;
 }
@@ -675,8 +750,8 @@ void StgMovePattern_Line::CopyFrom(StgMovePattern* _src) {
 
 void StgMovePattern_Line::Move() {
 	if (frameWork_ < maxFrame_) {
-		target_->SetPositionX(fma(speed_, c_, target_->GetPositionX()));
-		target_->SetPositionY(fma(speed_, s_, target_->GetPositionY()));
+		target_->SetPositionXY(fma(speed_, c_, target_->GetPositionX()),
+			fma(speed_, s_, target_->GetPositionY()));
 	}
 	else {
 		speed_ = 0;
@@ -806,8 +881,7 @@ void StgMovePattern_Line_Frame::Move() {
 
 		double nx = moveLerpFunc(iniPos_[0], targetPos_[0], tmp_line);
 		double ny = moveLerpFunc(iniPos_[1], targetPos_[1], tmp_line);
-		target_->SetPositionX(nx);
-		target_->SetPositionY(ny);
+		target_->SetPositionXY(nx, ny);
 	}
 	else {
 		speed_ = 0;
@@ -865,7 +939,6 @@ void StgMovePattern_Line_Weight::Move() {
 		tPos[1] = fma(speed_, s_, target_->GetPositionY());
 	}
 
-	target_->SetPositionX(tPos[0]);
-	target_->SetPositionY(tPos[1]);
+	target_->SetPositionXY(tPos[0], tPos[1]);
 	++frameWork_;
 }

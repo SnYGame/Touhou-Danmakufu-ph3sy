@@ -23,6 +23,9 @@ public:
 		TO_TYPE_IMMEDIATE,
 		TO_TYPE_FADE,
 		TO_TYPE_ITEM,
+		SHOT_ROTATION_DEFAULT,
+		SHOT_ROTATION_RELATIVE,
+		SHOT_ROTATION_OFFSET
 	};
 
 	enum class TypeDelete {
@@ -246,6 +249,10 @@ public:
 
 		FRAME_FADEDELETE = 30,
 		FRAME_FADEDELETE_LASER = 30,
+
+		ROTATION_DEFAULT = 40,
+		ROTATION_RELATIVE,
+		ROTATION_OFFSET,
 	};
 public:
 	struct DelayParameter {
@@ -391,8 +398,8 @@ public:
 	virtual void ClearShotObject() { ClearIntersectionRelativeTarget(); }
 	virtual void RegistIntersectionTarget() = 0;
 
-	virtual void SetX(float x) { posX_ = x; DxScriptRenderObject::SetX(x); }
-	virtual void SetY(float y) { posY_ = y; DxScriptRenderObject::SetY(y); }
+	virtual void SetX(float x) { StgMoveObject::SetPositionX(x); DxScriptRenderObject::SetX(x); }
+	virtual void SetY(float y) { StgMoveObject::SetPositionY(y); DxScriptRenderObject::SetY(y); }
 	virtual void SetColor(int r, int g, int b);
 	virtual void SetAlpha(int alpha);
 	virtual void SetRenderState() {}
@@ -474,6 +481,10 @@ protected:
 	double angularVelocity_;
 	bool bFixedAngle_;
 
+	double lastPosX_;
+	double lastPosY_;
+	int modeRotation_;
+
 	void _AddIntersectionRelativeTarget();
 	virtual void _SendDeleteEvent(TypeDelete type);
 public:
@@ -498,6 +509,8 @@ public:
 	virtual void SetShotDataID(int id);
 	void SetGraphicAngularVelocity(double agv) { angularVelocity_ = agv; }
 	void SetFixedAngle(bool fix) { bFixedAngle_ = fix; }
+
+	void SetRotationMode(int mode) { modeRotation_ = mode; }
 };
 
 //*******************************************************************
@@ -583,6 +596,7 @@ public:
 class StgStraightLaserObject : public StgLaserObject {
 protected:
 	double angLaser_;
+	double relAngLaser_;
 
 	bool bUseSouce_;
 	bool bUseEnd_;
@@ -607,7 +621,25 @@ public:
 	virtual bool GetIntersectionTargetList_NoVector(StgShotData* shotData);
 
 	double GetLaserAngle() { return angLaser_; }
-	void SetLaserAngle(double angle) { angLaser_ = angle; }
+	void SetLaserAngle(double angle) {
+		angLaser_ = angle;
+		if (auto parent = parent_.Lock()) {
+			relAngLaser_ = angLaser_ - Math::DegreeToRadian(parent->GetParentRotation());
+		}
+		else {
+			relAngLaser_ = angLaser_;
+		}
+	}
+	double GetRelativeAngle() { return relAngLaser_; }
+	void SetRelativeAngle(double angle) {
+		relAngLaser_ = angle;
+		if (auto parent = parent_.Lock()) {
+			angLaser_ = angle + Math::DegreeToRadian(parent->GetParentRotation());
+		}
+		else {
+			angLaser_ = angle;
+		}
+	}
 	void SetFadeDelete() { if (frameFadeDelete_ < 0) frameFadeDelete_ = FRAME_FADEDELETE_LASER; }
 
 	void SetSourceEnable(bool bEnable) { bUseSouce_ = bEnable; }
@@ -618,6 +650,8 @@ public:
 
 	void SetLaserExpand(bool b) { bLaserExpand_ = b; }
 	bool GetLaserExpand() { return bLaserExpand_; }
+
+	virtual void SetParent(ref_unsync_ptr<StgMoveObject> parent);
 };
 
 //*******************************************************************

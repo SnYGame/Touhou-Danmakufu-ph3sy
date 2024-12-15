@@ -351,6 +351,9 @@ public:
 	DNH_FUNCAPI_DECL_(Func_ObjMove_GetMoveFrame);
 	DNH_FUNCAPI_DECL_(Func_ObjMove_GetMovementType);
 	DNH_FUNCAPI_DECL_(Func_ObjMove_CancelMovement);
+	DNH_FUNCAPI_DECL_(Func_ObjMove_SetParent);
+	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_SetRotation);
+	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_SetScale);
 
 	//STG共通関数：敵オブジェクト操作
 	static gstd::value Func_ObjEnemy_Create(gstd::script_machine* machine, int argc, const gstd::value* argv);
@@ -431,6 +434,7 @@ public:
 	DNH_FUNCAPI_DECL_(Func_ObjShot_SetFixedAngle);
 	DNH_FUNCAPI_DECL_(Func_ObjShot_SetSpinAngularVelocity);
 	DNH_FUNCAPI_DECL_(Func_ObjShot_SetDelayAngularVelocity);
+	DNH_FUNCAPI_DECL_(Func_ObjShot_SetRotationMode);
 
 	static gstd::value Func_ObjLaser_SetLength(gstd::script_machine* machine, int argc, const gstd::value* argv);
 	static gstd::value Func_ObjLaser_SetRenderWidth(gstd::script_machine* machine, int argc, const gstd::value* argv);

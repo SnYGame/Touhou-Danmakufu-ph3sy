@@ -404,6 +404,9 @@ static const std::vector<function> stgStageFunction = {
 	{ "ObjMove_GetMoveFrame", StgStageScript::Func_ObjMove_GetMoveFrame, 1 },
 	{ "ObjMove_GetMovementType", StgStageScript::Func_ObjMove_GetMovementType, 1 },
 	{ "ObjMove_CancelMovement", StgStageScript::Func_ObjMove_CancelMovement, 1 },
+	{ "ObjMove_SetParent", StgStageScript::Func_ObjMove_SetParent, 2 },
+	{ "ObjMoveParent_SetRotation", StgStageScript::Func_ObjMoveParent_SetRotation, 2 },
+	{ "ObjMoveParent_SetScale", StgStageScript::Func_ObjMoveParent_SetScale, 2 },
 
 	//STG共通関数：敵オブジェクト操作
 	{ "ObjEnemy_Create", StgStageScript::Func_ObjEnemy_Create, 1 },
@@ -486,6 +489,7 @@ static const std::vector<function> stgStageFunction = {
 	{ "ObjShot_SetFixedAngle", StgStageScript::Func_ObjShot_SetFixedAngle, 2 },
 	{ "ObjShot_SetSpinAngularVelocity", StgStageScript::Func_ObjShot_SetSpinAngularVelocity, 2 },
 	{ "ObjShot_SetDelayAngularVelocity", StgStageScript::Func_ObjShot_SetDelayAngularVelocity, 2 },
+	{ "ObjShot_SetRotationMode", StgStageScript::Func_ObjShot_SetRotationMode, 2 },
 
 	{ "ObjLaser_SetLength", StgStageScript::Func_ObjLaser_SetLength, 2 },
 	{ "ObjLaser_SetRenderWidth", StgStageScript::Func_ObjLaser_SetRenderWidth, 2 },
@@ -578,6 +582,10 @@ static const std::vector<constant> stgStageConstant = {
 	constant("TYPE_IMMEDIATE", StgStageScript::TYPE_IMMEDIATE),
 	constant("TYPE_FADE", StgStageScript::TYPE_FADE),
 	constant("TYPE_ITEM", StgStageScript::TYPE_ITEM),
+
+	//Child rotation mode
+	constant("ROTATION_RELATIVE", StgShotObject::ROTATION_RELATIVE),
+	constant("ROTATION_OFFSET", StgShotObject::ROTATION_OFFSET),
 
 	//Shot owners
 	constant("OWNER_PLAYER", StgShotObject::OWNER_PLAYER),
@@ -2632,8 +2640,7 @@ gstd::value StgStageScript::Func_ObjMove_SetPosition(gstd::script_machine* machi
 	if (obj) {
 		double posX = argv[1].as_float();
 		double posY = argv[2].as_float();
-		obj->SetPositionX(posX);
-		obj->SetPositionY(posY);
+		obj->SetPositionXY(posX, posY);
 
 		if (DxScriptRenderObject* objR = dynamic_cast<DxScriptRenderObject*>(obj)) {
 			objR->SetX(posX);
@@ -3548,6 +3555,55 @@ gstd::value StgStageScript::Func_ObjMove_CancelMovement(gstd::script_machine* ma
 	StgMoveObject* obj = script->GetObjectPointerAs<StgMoveObject>(id);
 	if (obj)
 		obj->SetPattern(nullptr);
+	return value();
+}
+
+gstd::value StgStageScript::Func_ObjMove_SetParent(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	StgStageScript* script = (StgStageScript*)machine->data;
+	int id = argv[0].as_int();
+	int idParent = argv[1].as_int();
+	StgMoveObject* obj = script->GetObjectPointerAs<StgMoveObject>(id);
+	if (obj) {
+		ref_unsync_ptr<StgMoveObject> objParent = ref_unsync_ptr<StgMoveObject>::Cast(script->GetObject(idParent));
+		if (objParent) {
+			if (objParent.get() == obj) {
+				throw gstd::wexception(L"Cannot set an object to be a parent of itself.");
+			}
+			auto parent = objParent->GetParent();
+			while (auto ptr = parent.Lock()) {
+				if (ptr.get() == obj) {
+					throw gstd::wexception(L"Cannot create parent cycle.");
+				}
+				parent = ptr->GetParent();
+			}
+		}
+		obj->SetParent(objParent);
+	}
+	return value();
+}
+
+gstd::value StgStageScript::Func_ObjMoveParent_SetRotation(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	StgStageScript* script = (StgStageScript*)machine->data;
+	int id = argv[0].as_int();
+	StgMoveObject* obj = script->GetObjectPointerAs<StgMoveObject>(id);
+	if (obj) {
+		double angle = argv[1].as_float();
+		obj->SetParentRotation(angle);
+	}
+	return value();
+}
+
+gstd::value StgStageScript::Func_ObjMoveParent_SetScale(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	StgStageScript* script = (StgStageScript*)machine->data;
+	int id = argv[0].as_int();
+	StgMoveObject* obj = script->GetObjectPointerAs<StgMoveObject>(id);
+	if (obj) {
+		double scale = argv[1].as_float();
+		if (scale == 0) {
+			throw gstd::wexception(L"Cannot set move parent scale to 0.");
+		}
+		obj->SetParentScale(scale);
+	}
 	return value();
 }
 
@@ -4687,6 +4743,27 @@ gstd::value StgStageScript::Func_ObjShot_SetDelayAngularVelocity(gstd::script_ma
 	if (StgShotObject* obj = dynamic_cast<StgShotObject*>(script->GetObjectPointer(id))) {
 		double wvel = argv[1].as_float();
 		obj->SetDelayAngularVelocity(Math::DegreeToRadian(wvel));
+	}
+	return value();
+}
+gstd::value StgStageScript::Func_ObjShot_SetRotationMode(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	StgStageScript* script = (StgStageScript*)machine->data;
+	int id = argv[0].as_int();
+	StgNormalShotObject* obj = script->GetObjectPointerAs<StgNormalShotObject>(id);
+	if (obj) {
+		int mode = argv[1].as_int();
+		switch (mode) {
+		case StgShotObject::ROTATION_DEFAULT:
+			mode = StgShotManager::SHOT_ROTATION_DEFAULT;
+			break;
+		case StgShotObject::ROTATION_RELATIVE:
+			mode = StgShotManager::SHOT_ROTATION_RELATIVE;
+			break;
+		case StgShotObject::ROTATION_OFFSET:
+			mode = StgShotManager::SHOT_ROTATION_OFFSET;
+			break;
+		}
+		obj->SetRotationMode(mode);
 	}
 	return value();
 }

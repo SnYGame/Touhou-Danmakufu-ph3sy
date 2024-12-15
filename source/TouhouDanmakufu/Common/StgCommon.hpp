@@ -26,8 +26,22 @@ protected:
 	double posX_;
 	double posY_;
 
-	ref_unsync_ptr<StgMovePattern> pattern_;
+	double relativePosX_;
+	double relativePosY_;
 
+	Math::DVec2 r2aMatX_;
+	Math::DVec2 r2aMatY_;
+
+	Math::DVec2 a2rMatX_;
+	Math::DVec2 a2rMatY_;
+
+	double parentRotation_;
+	double parentScale_;
+
+	ref_unsync_ptr<StgMovePattern> pattern_;
+	ref_unsync_weak_ptr<StgMoveObject> parent_;
+	std::set<StgMoveObject*> children_;
+	bool movedThisFrame_;
 	bool bEnableMovement_;
 	int frameMove_;
 
@@ -46,9 +60,36 @@ public:
 	bool IsEnableMovement() { return bEnableMovement_; }
 
 	double GetPositionX() { return posX_; }
-	void SetPositionX(double pos) { posX_ = pos; }
+	void SetPositionX(double pos) { SetPositionXY(pos, posY_); }
 	double GetPositionY() { return posY_; }
-	void SetPositionY(double pos) { posY_ = pos; }
+	void SetPositionY(double pos) { SetPositionXY(posX_, pos); }
+
+	void SetPositionXY(double posX, double posY);
+
+	double GetRelativePositionX() { return relativePosX_; }
+	void SetRelativePositionX(double pos) { SetRelativePositionXY(pos, relativePosY_); }
+	double GetRelativePositionY() { return relativePosY_; }
+	void SetRelativePositionY(double pos) { SetRelativePositionXY(relativePosX_, pos); }
+
+	void UpdateRelativePosition() { SetRelativePositionXY(relativePosX_, relativePosY_); }
+
+	void SetRelativePositionXY(double posX, double posY);
+
+	void SetParentRotationScale(double angle, double scale) {
+		Math::DVec2 sc;
+		Math::DoSinCos(Math::DegreeToRadian(angle), sc);
+		r2aMatX_ = { sc[1] * scale, -sc[0] * scale };
+		r2aMatY_ = { sc[0] * scale, sc[1] * scale };
+		a2rMatX_ = { sc[1] / scale, sc[0] / scale };
+		a2rMatY_ = { -sc[0] / scale, sc[1] / scale };
+		parentRotation_ = angle;
+		parentScale_ = scale;
+	}
+
+	void SetParentRotation(double angle) { SetParentRotationScale(angle, parentScale_); }
+	void SetParentScale(double scale) { SetParentRotationScale(parentRotation_, scale); }
+	double GetParentRotation() { return parentRotation_; }
+	double GetParentScale() { return parentScale_; }
 
 	double GetSpeed();
 	void SetSpeed(double speed);
@@ -62,6 +103,8 @@ public:
 	void SetPattern(ref_unsync_ptr<StgMovePattern> pattern) {
 		pattern_ = pattern;
 	}
+	virtual void SetParent(ref_unsync_ptr<StgMoveObject> parent);
+	ref_unsync_weak_ptr<StgMoveObject> GetParent() { return parent_; }
 	void AddPattern(uint32_t frameDelay, ref_unsync_ptr<StgMovePattern> pattern, bool bForceMap = false);
 
 	int GetMoveFrame() { return frameMove_; }

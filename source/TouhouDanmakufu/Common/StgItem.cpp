@@ -1302,8 +1302,8 @@ void StgMovePattern_Item::Move() {
 	StgItemObject* itemObject = (StgItemObject*)target_;
 	StgStageController* stageController = itemObject->GetStageController();
 
-	double px = target_->GetPositionX();
-	double py = target_->GetPositionY();
+	double px = target_->GetRelativePositionX();
+	double py = target_->GetRelativePositionY();
 	if (typeMove_ == MOVE_TOPLAYER || (itemObject->IsDefaultCollectionMovement() && itemObject->IsMoveToPlayer())) {
 		if (frame_ == 0) speed_ = 6;
 		speed_ += 0.075;
@@ -1349,8 +1349,7 @@ void StgMovePattern_Item::Move() {
 	}
 
 	if (typeMove_ != MOVE_NONE) {
-		target_->SetPositionX(px + speed_ * c_);
-		target_->SetPositionY(py + speed_ * s_);
+		target_->SetRelativePositionXY(px + speed_ * c_, py + speed_ * s_);
 	}
 
 	++frame_;
