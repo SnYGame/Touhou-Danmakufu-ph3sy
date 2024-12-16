@@ -352,8 +352,17 @@ public:
 	DNH_FUNCAPI_DECL_(Func_ObjMove_GetMovementType);
 	DNH_FUNCAPI_DECL_(Func_ObjMove_CancelMovement);
 	DNH_FUNCAPI_DECL_(Func_ObjMove_SetParent);
+	DNH_FUNCAPI_DECL_(Func_ObjMove_SetRelativePosition);
+	DNH_FUNCAPI_DECL_(Func_ObjMove_SetRelativeX);
+	DNH_FUNCAPI_DECL_(Func_ObjMove_SetRelativeY);
+	DNH_FUNCAPI_DECL_(Func_ObjMove_GetRelativeX);
+	DNH_FUNCAPI_DECL_(Func_ObjMove_GetRelativeY);
+
+	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_Create);
 	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_SetRotation);
 	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_SetScale);
+	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_SetRotationSpeed);
+	DNH_FUNCAPI_DECL_(Func_ObjMoveParent_SetAutoDelete);
 
 	//STG共通関数：敵オブジェクト操作
 	static gstd::value Func_ObjEnemy_Create(gstd::script_machine* machine, int argc, const gstd::value* argv);

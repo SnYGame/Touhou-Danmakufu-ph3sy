@@ -37,6 +37,8 @@ protected:
 
 	double parentRotation_;
 	double parentScale_;
+	double parentRotationSpeed_;
+	bool parentAutoDelete_;
 
 	ref_unsync_ptr<StgMovePattern> pattern_;
 	ref_unsync_weak_ptr<StgMoveObject> parent_;
@@ -90,6 +92,8 @@ public:
 	void SetParentScale(double scale) { SetParentRotationScale(parentRotation_, scale); }
 	double GetParentRotation() { return parentRotation_; }
 	double GetParentScale() { return parentScale_; }
+	void SetParentRotationSpeed(double speed) { parentRotationSpeed_ = speed; }
+	void SetParentAutoDelete(bool autoDelete) { parentAutoDelete_ = autoDelete; }
 
 	double GetSpeed();
 	void SetSpeed(double speed);
@@ -108,6 +112,19 @@ public:
 	void AddPattern(uint32_t frameDelay, ref_unsync_ptr<StgMovePattern> pattern, bool bForceMap = false);
 
 	int GetMoveFrame() { return frameMove_; }
+};
+
+//*******************************************************************
+//StgMoveParentObject
+//*******************************************************************
+class StgMoveParentObject : public DxScriptRenderObject, public StgMoveObject {
+public:
+	StgMoveParentObject(StgStageController* stageController) : StgMoveObject(stageController) {}
+	virtual ~StgMoveParentObject() {}
+
+	virtual void Work();
+	virtual void SetColor(int r, int g, int b) {}
+	virtual void SetAlpha(int alpha) {}
 };
 
 //*******************************************************************

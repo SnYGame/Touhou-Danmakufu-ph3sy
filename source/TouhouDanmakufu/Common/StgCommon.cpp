@@ -18,6 +18,8 @@ StgMoveObject::StgMoveObject(StgStageController* stageController) : StgObjectBas
 
 	parentRotation_ = 0;
 	parentScale_ = 1;
+	parentRotationSpeed_ = 0;
+	parentAutoDelete_ = 0;
 
 	framePattern_ = 0;
 
@@ -51,6 +53,8 @@ void StgMoveObject::Copy(StgMoveObject* src) {
 
 	parentRotation_ = src->parentRotation_;
 	parentScale_ = src->parentScale_;
+	parentRotationSpeed_ = src->parentRotationSpeed_;
+	parentAutoDelete_ = src->parentAutoDelete_;
 
 	auto _ClonePattern = [](StgMovePattern* srcPattern, StgMoveObject* newTarget) {
 		ref_unsync_ptr<StgMovePattern> pattern = nullptr;
@@ -87,7 +91,8 @@ void StgMoveObject::_Move() {
 	}
 
 	++frameMove_;
-
+	if (parentRotationSpeed_ != 0)
+		SetParentRotation(parentRotation_ + parentRotationSpeed_);
 	if (mapPattern_.size() > 0) {
 		auto itr = mapPattern_.begin();
 		while (framePattern_ >= itr->first) {
@@ -193,6 +198,21 @@ void StgMoveObject::SetPositionXY(double posX, double posY) {
 		relativePosX_ = posX;
 		relativePosY_ = posY;
 	}
+}
+
+//****************************************************************************
+//StgMoveParentObject
+//****************************************************************************
+void StgMoveParentObject::Work() {
+	if (parentAutoDelete_ && children_.empty()) {
+		auto objectManager = stageController_->GetMainObjectManager();
+		objectManager->DeleteObject(this);
+		return;
+	}
+	movedThisFrame_ = false;
+	_Move();
+	DxScriptRenderObject::SetX(posX_);
+	DxScriptRenderObject::SetY(posY_);
 }
 
 //****************************************************************************
