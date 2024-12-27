@@ -117,14 +117,12 @@ public:
 //*******************************************************************
 //StgMoveParentObject
 //*******************************************************************
-class StgMoveParentObject : public DxScriptRenderObject, public StgMoveObject {
+class StgMoveParentObject : public DxScriptObjectBase, public StgMoveObject {
 public:
 	StgMoveParentObject(StgStageController* stageController) : StgMoveObject(stageController) {}
 	virtual ~StgMoveParentObject() {}
 
 	virtual void Work();
-	virtual void SetColor(int r, int g, int b) {}
-	virtual void SetAlpha(int alpha) {}
 };
 
 //*******************************************************************

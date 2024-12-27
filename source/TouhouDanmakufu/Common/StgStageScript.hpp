@@ -243,6 +243,7 @@ public:
 	*/
 	DNH_FUNCAPI_DECL_(Func_SetPlayerRebirthPosition);
 	DNH_FUNCAPI_DECL_(Func_KillPlayer);
+	DNH_FUNCAPI_DECL_(Func_RestorePlayer);
 
 	//STG共通関数：敵
 	static gstd::value Func_GetEnemyBossSceneObjectID(gstd::script_machine* machine, int argc, const gstd::value* argv);

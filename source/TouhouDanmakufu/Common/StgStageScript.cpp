@@ -294,6 +294,7 @@ static const std::vector<function> stgStageFunction = {
 	{ "SetPlayerShootdownEventEnable", StgStageScript::Func_SetPlayerInfoAsBool<&StgPlayerObject::SetEnableShootdownEvent>, 1 },
 	{ "SetPlayerRebirthPosition", StgStageScript::Func_SetPlayerRebirthPosition, 2 },
 	{ "KillPlayer", StgStageScript::Func_KillPlayer, 0 },
+	{ "RestorePlayer", StgStageScript::Func_RestorePlayer, 0 },
 
 	//STG共通関数：敵
 	{ "GetEnemyBossSceneObjectID", StgStageScript::Func_GetEnemyBossSceneObjectID, 0 },
@@ -1159,6 +1160,14 @@ gstd::value StgStageScript::Func_KillPlayer(gstd::script_machine* machine, int a
 	}
 	return value();
 }
+gstd::value StgStageScript::Func_RestorePlayer(gstd::script_machine* machine, int argc, const gstd::value* argv) {
+	StgStageScript* script = (StgStageScript*)machine->data;
+	ref_unsync_ptr<StgPlayerObject> objPlayer = script->stageController_->GetPlayerObject();
+	if (objPlayer) {
+		objPlayer->RestorePlayer();
+	}
+	return value();
+}
 gstd::value StgStageScript::Func_GetPlayerX(gstd::script_machine* machine, int argc, const gstd::value* argv) {
 	StgStageScript* script = (StgStageScript*)machine->data;
 
@@ -1209,10 +1218,15 @@ gstd::value StgStageScript::Func_GetAngleToPlayer(gstd::script_machine* machine,
 		double py = objPlayer->GetPositionY();
 
 		int id = argv[0].as_int();
-		DxScriptRenderObject* objMove = script->GetObjectPointerAs<DxScriptRenderObject>(id);
-		if (objMove) {
-			double tx = objMove->GetPosition().x;
-			double ty = objMove->GetPosition().y;
+		DxScriptRenderObject* objRender = script->GetObjectPointerAs<DxScriptRenderObject>(id);
+		if (objRender) {
+			double tx = objRender->GetPosition().x;
+			double ty = objRender->GetPosition().y;
+			angle = Math::RadianToDegree(atan2(py - ty, px - tx));
+		}
+		else if (StgMoveObject* objMove = script->GetObjectPointerAs<StgMoveObject>(id)) {
+			double tx = objMove->GetPositionX();
+			double ty = objMove->GetPositionY();
 			angle = Math::RadianToDegree(atan2(py - ty, px - tx));
 		}
 	}

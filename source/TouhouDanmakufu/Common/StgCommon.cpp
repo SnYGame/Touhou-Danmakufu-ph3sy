@@ -211,8 +211,6 @@ void StgMoveParentObject::Work() {
 	}
 	movedThisFrame_ = false;
 	_Move();
-	DxScriptRenderObject::SetX(posX_);
-	DxScriptRenderObject::SetY(posY_);
 }
 
 //****************************************************************************
