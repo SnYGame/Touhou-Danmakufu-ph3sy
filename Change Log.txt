@@ -2,6 +2,7 @@ A mostly-complete history log of engine updates can be found here.
 
 1.0.0:
 	Changes:
+		- Reverted ph3sx v1.33a-pre change that default number literals without decimal points to integers.
 		- Curved laser vertices are now based on position rather than angle.
 		- GetAngleToPlayer now works with ObjMove objects that aren't ObjRender (this applies only to move parents).
 	Additions:
