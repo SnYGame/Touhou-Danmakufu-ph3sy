@@ -191,8 +191,7 @@ void StgEnemyObject::Work() {
 	lifeDelta_ = lifePrev_ - life_;
 	lifePrev_ = life_;
 	damageAccumFrame_ = 0;
-
-	movedThisFrame_ = false;
+	
 	_Move();
 
 	_DeleteInAutoClip();

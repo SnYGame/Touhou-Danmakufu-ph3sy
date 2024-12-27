@@ -1433,7 +1433,6 @@ void StgNormalShotObject::Clone(DxScriptObjectBase* _src) {
 void StgNormalShotObject::Work() {
 	if (bEnableMovement_) {
 		_ProcessTransformAct();
-		movedThisFrame_ = false;
 		_Move();
 
 		if (delay_.time > 0) {
@@ -1879,7 +1878,6 @@ void StgLooseLaserObject::Work() {
 
 	if (bEnableMovement_) {
 		_ProcessTransformAct();
-		movedThisFrame_ = false;
 		_Move();
 
 
@@ -2155,7 +2153,6 @@ void StgStraightLaserObject::Work() {
 
 	if (bEnableMovement_) {
 		_ProcessTransformAct();
-		movedThisFrame_ = false;
 		_Move();
 
 		if (!bLaserExpand_ || delay_.time > 0) {
@@ -2433,7 +2430,6 @@ void StgCurveLaserObject::Work() {
 
 	if (bEnableMovement_) {
 		_ProcessTransformAct();
-		movedThisFrame_ = false;
 		_Move();
 
 		if (delay_.time > 0) {

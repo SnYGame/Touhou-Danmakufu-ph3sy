@@ -25,7 +25,6 @@ StgMoveObject::StgMoveObject(StgStageController* stageController) : StgObjectBas
 
 	pattern_ = nullptr;
 	parent_ = nullptr;
-	movedThisFrame_ = false;
 	bEnableMovement_ = true;
 	frameMove_ = 0;
 }
@@ -83,13 +82,7 @@ void StgMoveObject::Copy(StgMoveObject* src) {
 	}
 }
 
-void StgMoveObject::_Move() {
-	if (!bEnableMovement_ || movedThisFrame_) return;
-	movedThisFrame_ = true;
-	if (auto parent = parent_.Lock()) {
-		parent->_Move();
-	}
-
+void StgMoveObject::Move() {
 	++frameMove_;
 	if (parentRotationSpeed_ != 0)
 		SetParentRotation(parentRotation_ + parentRotationSpeed_);
@@ -106,12 +99,29 @@ void StgMoveObject::_Move() {
 	}
 	else if (pattern_ == nullptr) {
 		UpdateRelativePosition();
+		if (DxScriptRenderObject* objRender = dynamic_cast<DxScriptRenderObject*>(this)) {
+			objRender->SetX(posX_);
+			objRender->SetY(posY_);
+		}
 		return;
 	}
 
 	pattern_->Move();
 	UpdateRelativePosition();
+	if (DxScriptRenderObject* objRender = dynamic_cast<DxScriptRenderObject*>(this)) {
+		objRender->SetX(posX_);
+		objRender->SetY(posY_);
+	}
 	++framePattern_;
+}
+
+void StgMoveObject::_Move() {
+	if (parent_.Lock()) return;
+	if (bEnableMovement_) Move();
+
+	for (auto child : children_) {
+		child->Move();
+	}
 }
 void StgMoveObject::_AttachReservedPattern(ref_unsync_ptr<StgMovePattern> pattern) {
 	pattern->Activate(pattern_.get());
@@ -209,7 +219,6 @@ void StgMoveParentObject::Work() {
 		objectManager->DeleteObject(this);
 		return;
 	}
-	movedThisFrame_ = false;
 	_Move();
 }
 

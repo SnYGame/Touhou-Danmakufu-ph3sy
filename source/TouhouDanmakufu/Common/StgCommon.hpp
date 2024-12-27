@@ -43,7 +43,6 @@ protected:
 	ref_unsync_ptr<StgMovePattern> pattern_;
 	ref_unsync_weak_ptr<StgMoveObject> parent_;
 	std::set<StgMoveObject*> children_;
-	bool movedThisFrame_;
 	bool bEnableMovement_;
 	int frameMove_;
 
@@ -57,6 +56,7 @@ public:
 	virtual ~StgMoveObject();
 
 	virtual void Copy(StgMoveObject* src);
+	void Move();
 
 	void SetEnableMovement(bool b) { bEnableMovement_ = b; }
 	bool IsEnableMovement() { return bEnableMovement_; }
