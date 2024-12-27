@@ -253,6 +253,14 @@ void StgPlayerObject::KillSelf(int hitObj) {
 		script_->RequestEvent(StgStagePlayerScript::EV_HIT, &valueHitObjectID, 1);
 	}
 }
+void StgPlayerObject::RestorePlayer() {
+	if (state_ == STATE_DOWN || state_ == STATE_END) {
+		bVisible_ = true;
+		_InitializeRebirth();
+	}
+	state_ = STATE_NORMAL;
+	frameState_ = 0;
+}
 void StgPlayerObject::SendGrazeEvent() {
 	if (listGrazedShot_.size() == 0U) return;
 

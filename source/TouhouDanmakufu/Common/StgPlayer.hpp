@@ -97,6 +97,7 @@ public:
 	virtual void Intersect(StgIntersectionTarget* ownTarget, StgIntersectionTarget* otherTarget);
 	void CallSpell();
 	void KillSelf(int hitObj);
+	void RestorePlayer();
 
 	void SendGrazeEvent();
 
