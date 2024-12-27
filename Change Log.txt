@@ -1,5 +1,33 @@
 A mostly-complete history log of engine updates can be found here.
 
+1.0.0:
+	Changes:
+		- Curved laser vertices are now based on position rather than angle.
+		- GetAngleToPlayer now works with ObjMove objects that aren't ObjRender (this applies only to move parents).
+	Additions:
+		- Added ObjSound_AddJumpPoint and ObjSound_ClearJumpPoints.
+			- Setting loop points clears jump points.
+		- Added move parenting functions:
+			- ObjMove_SetParent
+			- ObjMove_SetRelativePosition
+			- ObjMove_SetRelativeX
+			- ObjMove_SetRelativeY
+			- ObjMove_GetRelativeX
+			- ObjMove_GetRelativeY
+			- ObjMoveParent_Create
+			- ObjMoveParent_SetRotation
+			- ObjMoveParent_SetScale
+			- ObjMoveParent_SetRotationSpeed
+			- ObjMoveParent_SetAutoDelete
+		- Added ObjShot_SetRotationMode, ROTATION_DEFAULT, ROTATION_RELATIVE, ROTATION_OFFSET.
+		- Added RestorePlayer to set player state back to STATE_NORMAL.
+	Bug fixes:
+		- Fixed crash when using integer modulo with 0.
+		- Fixed crash when overloading a variable with a function.
+		- Fixed ObjSound_Seek not working if ObjSound_SetRestartEnable is turned on while the sound is stopped.
+
+ph3sx changelog below
+
 1.33a-pre2:
 	Changes:
 		- ObjEnemy_SetDamageRate now ranges from 0 to 1 instead of 0 to 100.

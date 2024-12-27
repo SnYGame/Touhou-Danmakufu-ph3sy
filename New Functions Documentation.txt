@@ -3264,6 +3264,20 @@ ALL ARGUMENTS ARE FLOATS UNLESS STATED OTHERWISE
 				INFO_LENGTH_SAMPLE
 					- The total length of the audio in sample count.
 	
+	ObjSound_AddJumpPoint
+		Arguments:
+			1) (int) object ID
+			2) (int) sample start point
+			3) (int) sample jump dest
+		Description:
+			Jumps to the specified dest point once the start point is reached.
+	
+	ObjSound_ClearJumpPoints
+		Arguments:
+			1) (int) object ID
+		Description:
+			Clears all jump points.
+	
 	--------------------------------> Text File Object Functions <--------------------------------
 	
 	ObjFileT_SetLineText
@@ -4053,6 +4067,89 @@ ALL ARGUMENTS ARE FLOATS UNLESS STATED OTHERWISE
 		Description:
 			Cancels the object's current movement routine.
 	
+	ObjMove_SetParent
+		Arguments:
+			1) (int) object ID
+			2) (int) parent object ID
+		Description:
+			Sets the object's parent. The object will move relative to the parent's position and rotation.
+
+			MOVE_LINE type movements are unaffected.
+	
+	ObjMove_SetRelativePosition
+		Arguments:
+			1) (int) object ID
+			2) (float) x position
+			3) (float) y position
+		Description:
+			Sets the object's position relative to its parent.
+	
+	ObjMove_SetRelativeX
+		Arguments:
+			1) (int) object ID
+			2) (float) x position
+		Description:
+			Sets the object's x position relative to its parent.
+	
+	ObjMove_SetRelativeY
+		Arguments:
+			1) (int) object ID
+			2) (float) y position
+		Description:
+			Sets the object's y position relative to its parent.
+
+	ObjMove_GetRelativeX
+		Arguments:
+			1) (int) object ID
+		Returns:
+			(float) x position
+		Description:
+			Gets the object's x position relative to its parent.
+
+	ObjMove_GetRelativeY
+		Arguments:
+			1) (int) object ID
+		Returns:
+			(float) y position
+		Description:
+			Gets the object's y position relative to its parent.
+
+	--------------------------------> Move Parent Object Functions <--------------------------------
+
+	ObjMoveParent_Create
+		Returns:
+			(int) object ID
+		Description:
+			Creates a blank movement object.
+	
+	ObjMoveParent_SetRotation
+		Arguments:
+			1) (int) object ID
+			2) (float) rotation angle
+		Description:
+			Sets the move parent's rotation. This only affects the children's positions.
+	
+	ObjMoveParent_SetScale
+		Arguments:
+			1) (int) object ID
+			2) (float) scale
+		Description:
+			Sets the move parent's scale. This only affects the children's positions. Cannot be set to 0.
+	
+	ObjMoveParent_SetRotationSpeed
+		Arguments:
+			1) (int) object ID
+			2) (float) rotation speed
+		Description:
+			Sets the velocity of the move parent's rotation.
+	
+	ObjMoveParent_SetAutoDelete
+		Arguments:
+			1) (int) object ID
+			2) (bool) auto delete
+		Description:
+			If enabled, the object will automatically delete itself if all its children are deleted.
+
 	--------------------------------> Enemy Object Functions <--------------------------------
 	
 	ObjEnemy_GetInfo
@@ -4394,6 +4491,18 @@ ALL ARGUMENTS ARE FLOATS UNLESS STATED OTHERWISE
 			Sets the Z angle spin speed of the shot's delay cloud.
 			
 			The default delay spin speed is 0.
+	
+	ObjShot_SetRotationMode
+		Arguments:
+			1) (int) object ID
+			2) (int) mode
+		Description:
+			Sets how the render angle of the shot object will behave.
+
+			Available modes:
+				- ROTATION_DEFAULT			; Default behavior
+				- ROTATION_RELATIVE			; Render angle rotates relative to parent
+				- ROTATION_OFFSET			; Render angle faces away from previous position
 	
 	--------------------------------> Straight Laser Object Functions <--------------------------------
 	
