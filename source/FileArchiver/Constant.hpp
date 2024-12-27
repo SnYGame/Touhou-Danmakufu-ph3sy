@@ -15,5 +15,5 @@
 using namespace gstd;
 using namespace directx;
 
-const std::wstring WINDOW_TITLE = L"File Archiver ph3sx";
+const std::wstring WINDOW_TITLE = L"File Archiver ph3sy";
 const std::wstring PATH_ENVIRONMENT = L"settings.dat";

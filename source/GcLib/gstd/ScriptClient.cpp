@@ -299,7 +299,7 @@ ScriptClientBase::ScriptClientBase() {
 	_AddFunction(&commonFunction);
 	_AddConstant(&commonConstant);
 	{
-		definedMacro_[L"_DNH_PH3SX_"] = L"";
+		definedMacro_[L"_DNH_PH3SY_"] = L"";
 	}
 
 	Reset();

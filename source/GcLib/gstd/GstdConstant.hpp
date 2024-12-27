@@ -1,14 +1,14 @@
 #pragma once
 #include "../pch.h"
 
-const std::wstring DNH_EXE_NAME = L"th_dnh_ph3sx.exe";
-const std::wstring DNH_VERSION = L"v1.33a-pre2";
+const std::wstring DNH_EXE_NAME = L"th_dnh_ph3sy.exe";
+const std::wstring DNH_VERSION = L"v1.0.0";
 
 constexpr const uint64_t _GAME_VERSION_RESERVED = /*e*/621;		//OWO!!!!!
 constexpr const uint64_t _GAME_VERSION_MAJOR = 1;
-constexpr const uint64_t _GAME_VERSION_SUBMAJOR = 4;
+constexpr const uint64_t _GAME_VERSION_SUBMAJOR = 0;
 constexpr const uint64_t _GAME_VERSION_MINOR = 0;
-constexpr const uint64_t _GAME_VERSION_REVISION = 1;
+constexpr const uint64_t _GAME_VERSION_REVISION = 0;
 
 //00000000 00000000 | 00000000 00000000 | 00000000 00000000 | 00000000 00000000
 //<-RESERVED--><----MAJOR----> <-----SUBMAJOR----> <------MINOR------> <REVIS->
