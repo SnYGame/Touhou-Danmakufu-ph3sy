@@ -156,7 +156,7 @@ void StgPlayerObject::Move() {
 	}
 }
 void StgPlayerObject::_Move() {
-	StgMoveObject::_Move();
+	if (parent_.Lock()) return;
 
 	EDirectInput* input = EDirectInput::GetInstance();
 	DIKeyState keyLeft = input->GetVirtualKeyState(EDirectInput::KEY_LEFT);
