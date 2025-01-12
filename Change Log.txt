@@ -1,5 +1,11 @@
 A mostly-complete history log of engine updates can be found here.
 
+1.0.1:
+	Bug fixes:
+		- Fixed items not moving correctly.
+		- Fixed move parents moving after children if it spawned later.
+		- Fixed Get2dPosition and GetObject2dPosition returning the wrong position.
+
 1.0.0:
 	Changes:
 		- Reverted ph3sx v1.33a-pre change that default number literals without decimal points to integers.
