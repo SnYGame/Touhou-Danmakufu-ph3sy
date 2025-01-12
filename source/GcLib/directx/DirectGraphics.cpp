@@ -1504,14 +1504,13 @@ D3DXVECTOR2 DxCamera::TransformCoordinateTo2D(D3DXVECTOR3 pos) {
 	D3DXVECTOR4 vect;
 	D3DXVec3Transform(&vect, &pos, &matViewProjection_);
 
-	/*
 	if (vect.w > 0) {
 		vect.x = width / 2.0f + (vect.x / vect.w) * width / 2.0f;
 		vect.y = height / 2.0f - (vect.y / vect.w) * height / 2.0f; // Ｙ方向は上が正となるため
+		return D3DXVECTOR2(vect.x, vect.y);
 	}
-	*/
 
-	return D3DXVECTOR2(vect.x, vect.y);
+	return D3DXVECTOR2((FLOAT)DxScript::g_posInvalidX_, (FLOAT)DxScript::g_posInvalidY_);
 }
 void DxCamera::PushMatrixState() {
 	listMatrixState_.push_back(matViewProjection_);
