@@ -100,8 +100,11 @@ void StgMoveObject::Move() {
 	else if (pattern_ == nullptr) {
 		UpdateRelativePosition();
 		if (DxScriptRenderObject* objRender = dynamic_cast<DxScriptRenderObject*>(this)) {
-			objRender->SetX(posX_);
-			objRender->SetY(posY_);
+			if (!dynamic_cast<StgLooseLaserObject*>(this)) {
+				// Setting position will reset length so don't call this
+				objRender->SetX(posX_);
+				objRender->SetY(posY_);
+			}
 		}
 		return;
 	}
@@ -109,8 +112,10 @@ void StgMoveObject::Move() {
 	pattern_->Move();
 	UpdateRelativePosition();
 	if (DxScriptRenderObject* objRender = dynamic_cast<DxScriptRenderObject*>(this)) {
-		objRender->SetX(posX_);
-		objRender->SetY(posY_);
+		if (!dynamic_cast<StgLooseLaserObject*>(this)) {
+			objRender->SetX(posX_);
+			objRender->SetY(posY_);
+		}
 	}
 	++framePattern_;
 }
